@@ -3,10 +3,14 @@ package cat.politecnicllevant.gestsuitereserves.controller;
 import cat.politecnicllevant.common.model.Notificacio;
 import cat.politecnicllevant.common.model.NotificacioTipus;
 import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
+import cat.politecnicllevant.gestsuitereserves.dto.gestib.UsuariDto;
 import cat.politecnicllevant.gestsuitereserves.model.Reserva;
+import cat.politecnicllevant.gestsuitereserves.restclient.CoreRestClient;
 import cat.politecnicllevant.gestsuitereserves.service.ReservaService;
+import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +18,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +31,12 @@ public class ReservaController {
 
     @Autowired
     private ReservaService reservaService;
+
+    @Autowired
+    private TokenManager tokenManager;
+
+    @Autowired
+    private CoreRestClient coreRestClient;
 
     @Autowired
     private Gson gson;
@@ -43,27 +57,46 @@ public class ReservaController {
         return new ResponseEntity<>(reservaDto, HttpStatus.OK);
     }
 
-    @PostMapping("/categoria/desar")
-    public ResponseEntity<Notificacio> desarCategoriaConvalidacio(@RequestBody String json, HttpServletRequest request) throws GeneralSecurityException, IOException {
+    @PostMapping("/reserva/desar")
+    public ResponseEntity<Notificacio> desarReserva(@RequestBody String json, HttpServletRequest request) throws Exception {
+
+        Claims claims = tokenManager.getClaims(request);
+        String myEmail = (String) claims.get("email");
+
+        ResponseEntity<UsuariDto> usuariResponse = coreRestClient.getProfile(myEmail);
+        UsuariDto usuariDto = usuariResponse.getBody();
+
+        if(usuariDto == null) {
+            Notificacio notificacio = new Notificacio();
+            notificacio.setNotifyMessage("No s'ha pogut desar la reserva");
+            notificacio.setNotifyType(NotificacioTipus.ERROR);
+            return new ResponseEntity<>(notificacio, HttpStatus.OK);
+        }
 
         JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
 
-        Long idCategoria = null;
+        Long idReserva = null;
         if (jsonObject.get("id") != null && !jsonObject.get("id").isJsonNull()){
-            idCategoria = jsonObject.get("id").getAsLong();
+            idReserva = jsonObject.get("id").getAsLong();
         }
 
         String descripcio = jsonObject.get("descripcio").getAsString();
 
+        LocalDateTime dataInici = LocalDateTime.parse(jsonObject.get("dataInici").getAsString(), DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
+        LocalDateTime dataFi = LocalDateTime.parse(jsonObject.get("dataFi").getAsString(), DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
+
         ReservaDto reservaDto;
 
-        if(idCategoria != null) {
-            reservaDto = reservaService.getReservaById(idCategoria);
+        if(idReserva != null) {
+            reservaDto = reservaService.getReservaById(idReserva);
         } else {
             reservaDto = new ReservaDto();
         }
 
         reservaDto.setDescripcio(descripcio);
+        reservaDto.setDataInici(dataInici);
+        reservaDto.setDataFi(dataFi);
+        reservaDto.setUsuari(usuariDto.getIdusuari());
 
         reservaService.save(reservaDto);
 
