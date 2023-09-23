@@ -108,7 +108,7 @@ public class ReservaController {
         reservaService.save(reservaDto);
 
         //Reservem a l'agenda de Google Calendar
-        googleCalendarService.createEvent(CALENDAR_AULA_MAGNA);
+        googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+usuariDto.getGsuiteFullName(),dataInici,dataFi);
 
 
         Notificacio notificacio = new Notificacio();
@@ -116,35 +116,6 @@ public class ReservaController {
         notificacio.setNotifyType(NotificacioTipus.SUCCESS);
         return new ResponseEntity<>(notificacio, HttpStatus.OK);
     }
-
-    /*@PostMapping("/categoria/esborrar")
-    public ResponseEntity<Notificacio> esborrarCategoriaConvalidacio(@RequestBody String json, HttpServletRequest request) throws GeneralSecurityException, IOException {
-
-        JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
-
-        Long idCategoria = null;
-        if (jsonObject.get("id") != null && !jsonObject.get("id").isJsonNull()){
-            idCategoria = jsonObject.get("id").getAsLong();
-        }
-
-
-        if(idCategoria != null) {
-            Categoria categoria = categoriaService.getCategoriaConvalidacioById(idCategoria);
-            categoriaService.esborrar(categoria);
-
-            Notificacio notificacio = new Notificacio();
-            notificacio.setNotifyMessage("Categoria esborrada correctament");
-            notificacio.setNotifyType(NotificacioTipus.SUCCESS);
-            return new ResponseEntity<>(notificacio, HttpStatus.OK);
-        }
-
-        Notificacio notificacio = new Notificacio();
-        notificacio.setNotifyMessage("No s'ha pogut esborrar la categoria");
-        notificacio.setNotifyType(NotificacioTipus.ERROR);
-        return new ResponseEntity<>(notificacio, HttpStatus.OK);
-
-    }
-*/
 
 
 }

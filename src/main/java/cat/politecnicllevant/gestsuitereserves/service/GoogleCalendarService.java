@@ -18,6 +18,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class GoogleCalendarService {
@@ -31,7 +33,7 @@ public class GoogleCalendarService {
     @Value("${gc.nomprojecte}")
     private String nomProjecte;
 
-    public void createEvent(String idCalendar) throws IOException, GeneralSecurityException {
+    public void createEvent(String idCalendar, String espai, String descripcio, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
 
@@ -43,12 +45,16 @@ public class GoogleCalendarService {
 
         Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
 
+        String dateIniStr = ini.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        String dateFiStr = fi.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+
         Event event = new Event();
-        event.setSummary("Google I/O 2015");
-        event.setLocation("800 Howard St., San Francisco, CA 94103");
-        event.setDescription("A chance to hear more about Google's developer products.");
-        event.setStart(new EventDateTime().setDateTime(new DateTime("2023-09-28T09:00:00-07:00")).setTimeZone("America/Los_Angeles"));
-        event.setEnd(new EventDateTime().setDateTime(new DateTime("2023-09-28T17:00:00-07:00")).setTimeZone("America/Los_Angeles"));
+        event.setSummary(descripcio);
+        event.setLocation(espai);
+        event.setDescription(descripcio);
+        event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
+        event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
+
 
         service.events().insert(idCalendar, event).execute();
     }
