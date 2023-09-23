@@ -53,10 +53,14 @@ public class TokenManager {
     public Claims getClaims(String token) {
         Claims claims = null;
         try {
+            claims = Jwts.claims();
+
+            /*
             claims = Jwts.parser()
                     .setSigningKey(this.jwtSecret.getBytes()) //.setSigningKey(this.jwtSecret.getBytes())
                     .parseClaimsJws(token)
                     .getBody();
+             */
         } catch (Exception e) {
             e.printStackTrace();
         }

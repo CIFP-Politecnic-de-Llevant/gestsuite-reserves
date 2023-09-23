@@ -92,12 +92,49 @@
 		</dependency>
 
 		<!-- JWT -->
-		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
+		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt</artifactId>
-			<version>0.9.1</version>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.11.5</version>
 		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.google.http-client/google-http-client-jackson2 -->
+		<dependency>
+			<groupId>com.google.http-client</groupId>
+			<artifactId>google-http-client-jackson2</artifactId>
+			<version>1.41.8</version>
+		</dependency>
+
+
+		<!-- GOOGLE -->
+
+		<!-- https://mvnrepository.com/artifact/com.google.apis/google-api-services-calendar -->
+		<dependency>
+			<groupId>com.google.apis</groupId>
+			<artifactId>google-api-services-calendar</artifactId>
+			<version>v3-rev20220422-1.32.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.auth</groupId>
+			<artifactId>google-auth-library-oauth2-http</artifactId>
+			<version>1.11.0</version>
+			<scope>compile</scope>
+		</dependency>
+
+
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

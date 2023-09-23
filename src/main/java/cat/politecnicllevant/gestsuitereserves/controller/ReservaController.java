@@ -6,6 +6,7 @@ import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
 import cat.politecnicllevant.gestsuitereserves.dto.gestib.UsuariDto;
 import cat.politecnicllevant.gestsuitereserves.model.Reserva;
 import cat.politecnicllevant.gestsuitereserves.restclient.CoreRestClient;
+import cat.politecnicllevant.gestsuitereserves.service.GoogleCalendarService;
 import cat.politecnicllevant.gestsuitereserves.service.ReservaService;
 import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
 import com.google.gson.Gson;
@@ -33,6 +34,9 @@ public class ReservaController {
     private ReservaService reservaService;
 
     @Autowired
+    private GoogleCalendarService googleCalendarService;
+
+    @Autowired
     private TokenManager tokenManager;
 
     @Autowired
@@ -40,6 +44,8 @@ public class ReservaController {
 
     @Autowired
     private Gson gson;
+
+    private final String CALENDAR_AULA_MAGNA = "c_fde278d64cd5f4b1b2d54ce1e07a948ab1fdfdf92d411a68433043bab8f17f3a@group.calendar.google.com";
 
     @GetMapping("/reserves")
     public ResponseEntity<List<ReservaDto>> getReserves() {
@@ -82,8 +88,9 @@ public class ReservaController {
 
         String descripcio = jsonObject.get("descripcio").getAsString();
 
-        LocalDateTime dataInici = LocalDateTime.parse(jsonObject.get("dataInici").getAsString(), DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
-        LocalDateTime dataFi = LocalDateTime.parse(jsonObject.get("dataFi").getAsString(), DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
+        System.out.println("Date inici"+jsonObject.get("dataInici").getAsString());
+        LocalDateTime dataInici = LocalDateTime.parse(jsonObject.get("dataInici").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        LocalDateTime dataFi = LocalDateTime.parse(jsonObject.get("dataFi").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
         ReservaDto reservaDto;
 
@@ -99,6 +106,10 @@ public class ReservaController {
         reservaDto.setUsuari(usuariDto.getIdusuari());
 
         reservaService.save(reservaDto);
+
+        //Reservem a l'agenda de Google Calendar
+        googleCalendarService.createEvent(CALENDAR_AULA_MAGNA);
+
 
         Notificacio notificacio = new Notificacio();
         notificacio.setNotifyMessage("Reserva desada correctament");
