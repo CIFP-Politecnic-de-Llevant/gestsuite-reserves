@@ -74,7 +74,7 @@ public class ReservaController {
 
         if(usuariDto == null) {
             Notificacio notificacio = new Notificacio();
-            notificacio.setNotifyMessage("No s'ha pogut desar la reserva");
+            notificacio.setNotifyMessage("Ja hi ha una reserva a aquesta franja horària.");
             notificacio.setNotifyType(NotificacioTipus.ERROR);
             return new ResponseEntity<>(notificacio, HttpStatus.OK);
         }
@@ -91,6 +91,14 @@ public class ReservaController {
         System.out.println("Date inici"+jsonObject.get("dataInici").getAsString());
         LocalDateTime dataInici = LocalDateTime.parse(jsonObject.get("dataInici").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
         LocalDateTime dataFi = LocalDateTime.parse(jsonObject.get("dataFi").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+        //Comprovam disponibilitat
+        if(googleCalendarService.isOverlap(this.CALENDAR_AULA_MAGNA,dataInici,dataFi)) {
+            Notificacio notificacio = new Notificacio();
+            notificacio.setNotifyMessage("Ja hi ha una reserva en aquesta franja horària");
+            notificacio.setNotifyType(NotificacioTipus.ERROR);
+            return new ResponseEntity<>(notificacio, HttpStatus.OK);
+        }
 
         ReservaDto reservaDto;
 
