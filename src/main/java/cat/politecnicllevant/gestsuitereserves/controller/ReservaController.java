@@ -3,12 +3,10 @@ package cat.politecnicllevant.gestsuitereserves.controller;
 import cat.politecnicllevant.common.model.Notificacio;
 import cat.politecnicllevant.common.model.NotificacioTipus;
 import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
-import cat.politecnicllevant.gestsuitereserves.dto.gestib.UsuariDto;
-import cat.politecnicllevant.gestsuitereserves.model.Reserva;
-import cat.politecnicllevant.gestsuitereserves.restclient.CoreRestClient;
 import cat.politecnicllevant.gestsuitereserves.service.GoogleCalendarService;
 import cat.politecnicllevant.gestsuitereserves.service.ReservaService;
 import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
+import com.google.api.services.calendar.model.Event;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.jsonwebtoken.Claims;
@@ -17,11 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -38,9 +32,6 @@ public class ReservaController {
 
     @Autowired
     private TokenManager tokenManager;
-
-    @Autowired
-    private CoreRestClient coreRestClient;
 
     @Autowired
     private Gson gson;
@@ -68,16 +59,8 @@ public class ReservaController {
 
         Claims claims = tokenManager.getClaims(request);
         String myEmail = (String) claims.get("email");
+        String nomUsuari = (String) claims.get("nom");
 
-        ResponseEntity<UsuariDto> usuariResponse = coreRestClient.getProfile(myEmail);
-        UsuariDto usuariDto = usuariResponse.getBody();
-
-        if(usuariDto == null) {
-            Notificacio notificacio = new Notificacio();
-            notificacio.setNotifyMessage("Ja hi ha una reserva a aquesta franja horària.");
-            notificacio.setNotifyType(NotificacioTipus.ERROR);
-            return new ResponseEntity<>(notificacio, HttpStatus.OK);
-        }
 
         JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
 
@@ -100,6 +83,10 @@ public class ReservaController {
             return new ResponseEntity<>(notificacio, HttpStatus.OK);
         }
 
+        //Reservem a l'agenda de Google Calendar
+        Event event = googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
+
+
         ReservaDto reservaDto;
 
         if(idReserva != null) {
@@ -111,12 +98,13 @@ public class ReservaController {
         reservaDto.setDescripcio(descripcio);
         reservaDto.setDataInici(dataInici);
         reservaDto.setDataFi(dataFi);
-        reservaDto.setUsuari(usuariDto.getIdusuari());
+        reservaDto.setUsuariEmail(myEmail);
+        reservaDto.setUsuariNom(nomUsuari);
+
+        reservaDto.setIdCalendar(event.getICalUID());
+        reservaDto.setIdCalendarEvent(event.getId());
 
         reservaService.save(reservaDto);
-
-        //Reservem a l'agenda de Google Calendar
-        googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+usuariDto.getGsuiteFullName(),dataInici,dataFi);
 
 
         Notificacio notificacio = new Notificacio();

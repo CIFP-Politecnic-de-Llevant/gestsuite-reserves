@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
@@ -33,7 +32,7 @@ public class GoogleCalendarService {
     @Value("${gc.nomprojecte}")
     private String nomProjecte;
 
-    public void createEvent(String idCalendar, String espai, String descripcio, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
+    public Event createEvent(String idCalendar, String espai, String descripcio, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
 
@@ -55,7 +54,7 @@ public class GoogleCalendarService {
         event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
         event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
 
-        service.events().insert(idCalendar, event).execute();
+        return service.events().insert(idCalendar, event).execute();
     }
 
     public boolean isOverlap(String idCalendar, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {

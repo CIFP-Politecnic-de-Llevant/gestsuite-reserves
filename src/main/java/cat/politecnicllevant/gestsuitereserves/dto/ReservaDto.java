@@ -11,5 +11,8 @@ public @Data class ReservaDto {
     private String descripcio;
     private LocalDateTime dataInici;
     private LocalDateTime dataFi;
-    private Long usuari;
+    private String usuariEmail;
+    private String usuariNom;
+    private String idCalendar;
+    private String idCalendarEvent;
 }

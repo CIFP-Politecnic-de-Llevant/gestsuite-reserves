@@ -25,7 +25,15 @@ public @Data class Reserva {
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime dataFi;
 
-    //Microservei CORE
-    @Column(name = "usuari_idusuari", nullable = false)
-    private Long usuari;
+    @Column(name = "usuari_email", nullable = false)
+    private Long usuariEmail;
+
+    @Column(name = "usuari_nom", nullable = false)
+    private Long usuariNom;
+
+    @Column(name = "idcalendar", nullable = false)
+    private Long idCalendar;
+
+    @Column(name = "idcalendar_event", nullable = false)
+    private Long idCalendarEvent;
 }
