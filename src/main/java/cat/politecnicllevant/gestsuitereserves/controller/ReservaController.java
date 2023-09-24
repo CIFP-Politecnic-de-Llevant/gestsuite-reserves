@@ -61,6 +61,9 @@ public class ReservaController {
         String myEmail = (String) claims.get("email");
         String nomUsuari = (String) claims.get("nom");
 
+        System.out.println("myEmail: "+myEmail);
+        System.out.println("nomUsuari: "+nomUsuari);
+
 
         JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
 
@@ -84,15 +87,18 @@ public class ReservaController {
         }
 
         //Reservem a l'agenda de Google Calendar
-        Event event = googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
+        Event event;
 
 
         ReservaDto reservaDto;
 
         if(idReserva != null) {
             reservaDto = reservaService.getReservaById(idReserva);
+            event = googleCalendarService.getEventById(reservaDto.getIdCalendar(),reservaDto.getIdCalendarEvent());
+            event = googleCalendarService.updateEvent(event, CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
         } else {
             reservaDto = new ReservaDto();
+            event = googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
         }
 
         reservaDto.setDescripcio(descripcio);

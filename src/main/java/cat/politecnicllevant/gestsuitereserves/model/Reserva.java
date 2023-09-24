@@ -26,14 +26,14 @@ public @Data class Reserva {
     private LocalDateTime dataFi;
 
     @Column(name = "usuari_email", nullable = false)
-    private Long usuariEmail;
+    private String usuariEmail;
 
     @Column(name = "usuari_nom", nullable = false)
-    private Long usuariNom;
+    private String usuariNom;
 
     @Column(name = "idcalendar", nullable = false)
-    private Long idCalendar;
+    private String idCalendar;
 
     @Column(name = "idcalendar_event", nullable = false)
-    private Long idCalendarEvent;
+    private String idCalendarEvent;
 }

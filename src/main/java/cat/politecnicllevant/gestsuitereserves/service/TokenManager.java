@@ -45,6 +45,7 @@ public class TokenManager {
     }
 
     public Claims getClaims(HttpServletRequest request) {
+        System.out.println("Claims: "+request.getHeader("Authorization"));
         String auth = request.getHeader("Authorization");
         String token = auth.replace("Bearer ", "");
         return getClaims(token);
@@ -53,15 +54,9 @@ public class TokenManager {
     public Claims getClaims(String token) {
         Claims claims = null;
         try {
-            claims = Jwts.claims();
-
-            /*
-            claims = Jwts.parser()
-                    .setSigningKey(this.jwtSecret.getBytes()) //.setSigningKey(this.jwtSecret.getBytes())
-                    .parseClaimsJws(token)
-                    .getBody();
-             */
+            claims = Jwts.parserBuilder().setSigningKey(jwtSecret.getBytes()).build().parseClaimsJws(token).getBody();
         } catch (Exception e) {
+            System.out.println("Error getClaims");
             e.printStackTrace();
         }
         return claims;

@@ -57,6 +57,45 @@ public class GoogleCalendarService {
         return service.events().insert(idCalendar, event).execute();
     }
 
+    public Event updateEvent(Event event,  String idCalendar, String espai, String descripcio, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
+        String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+        GoogleCredentials credentials = null;
+
+        credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(this.adminUser);
+
+        HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+        Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+        String dateIniStr = ini.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        String dateFiStr = fi.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+
+        event.setSummary(descripcio);
+        event.setLocation(espai);
+        event.setDescription(descripcio);
+        event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
+        event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
+
+        return service.events().update(idCalendar, event.getId(), event).execute();
+    }
+
+    public Event getEventById(String idCalendar, String idEvent) throws IOException, GeneralSecurityException {
+        String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+        GoogleCredentials credentials = null;
+
+        credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(this.adminUser);
+
+        HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+        Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+        return service.events().get(idCalendar, idEvent).execute();
+    }
+
     public boolean isOverlap(String idCalendar, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
