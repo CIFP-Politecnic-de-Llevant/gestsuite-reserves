@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -36,7 +38,37 @@ public class ReservaController {
     @Autowired
     private Gson gson;
 
-    private final String CALENDAR_AULA_MAGNA = "c_fde278d64cd5f4b1b2d54ce1e07a948ab1fdfdf92d411a68433043bab8f17f3a@group.calendar.google.com";
+    //private final String CALENDAR_AULA_MAGNA = "c_fde278d64cd5f4b1b2d54ce1e07a948ab1fdfdf92d411a68433043bab8f17f3a@group.calendar.google.com";
+    private final String CALENDAR_AULA_MAGNA = "6e367ff7e6e4a0e97582c8454f06a4bcc06ed640e5f06f42067cd13525de7b36@group.calendar.google.com";
+
+    @GetMapping("/myreserves")
+    public ResponseEntity<List<ReservaDto>> getMyReserves(HttpServletRequest request) throws GeneralSecurityException, IOException {
+        Claims claims = tokenManager.getClaims(request);
+        String myEmail = (String) claims.get("email");
+        String nomUsuari = (String) claims.get("nom");
+
+        List<ReservaDto> reserves = reservaService.findAllByEmail(myEmail);
+
+        //Actualitzem les reserves si s'han modificat a Google Calendar
+        for(ReservaDto reservaDto : reserves){
+            try {
+                System.out.println("idCalendarEvent: "+reservaDto.getIdCalendarEvent());
+                Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA, reservaDto.getIdCalendarEvent());
+                if (event != null) {
+                    System.out.println("Event updating: "+event);
+                    reservaDto.setDescripcio(event.getSummary());
+                    //reservaDto.setDataInici(LocalDateTime.parse(event.getStart().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                    //reservaDto.setDataFi(LocalDateTime.parse(event.getEnd().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                    reservaService.save(reservaDto);
+                }
+            } catch (Exception e){
+                System.out.println("L'event no existeix per aquest usuari al calendari");
+                e.printStackTrace();
+            }
+        }
+
+        return new ResponseEntity<>(reserves, HttpStatus.OK);
+    }
 
     @GetMapping("/reserves")
     public ResponseEntity<List<ReservaDto>> getReserves() {
@@ -78,36 +110,45 @@ public class ReservaController {
         LocalDateTime dataInici = LocalDateTime.parse(jsonObject.get("dataInici").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
         LocalDateTime dataFi = LocalDateTime.parse(jsonObject.get("dataFi").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
+
+        //Reservem a l'agenda de Google Calendar
+        Event event = null;
+
+        ReservaDto reservaDto;
+
+        if(idReserva != null) {
+            reservaDto = reservaService.getReservaById(idReserva);
+            System.out.println("idCalendarEvent 2: "+reservaDto.getIdCalendarEvent());
+            event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,reservaDto.getIdCalendarEvent());
+        } else {
+            reservaDto = new ReservaDto();
+        }
+
         //Comprovam disponibilitat
-        if(googleCalendarService.isOverlap(this.CALENDAR_AULA_MAGNA,dataInici,dataFi)) {
+        if(googleCalendarService.isOverlap(this.CALENDAR_AULA_MAGNA,dataInici,dataFi,event)){
             Notificacio notificacio = new Notificacio();
             notificacio.setNotifyMessage("Ja hi ha una reserva en aquesta franja horària");
             notificacio.setNotifyType(NotificacioTipus.ERROR);
             return new ResponseEntity<>(notificacio, HttpStatus.OK);
         }
 
-        //Reservem a l'agenda de Google Calendar
-        Event event;
 
-
-        ReservaDto reservaDto;
-
+        //Creem la reserva a Google Calendar
         if(idReserva != null) {
-            reservaDto = reservaService.getReservaById(idReserva);
-            event = googleCalendarService.getEventById(reservaDto.getIdCalendar(),reservaDto.getIdCalendarEvent());
             event = googleCalendarService.updateEvent(event, CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
         } else {
-            reservaDto = new ReservaDto();
             event = googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
         }
 
+
+        //Desem la reserva a la BBDD
         reservaDto.setDescripcio(descripcio);
         reservaDto.setDataInici(dataInici);
         reservaDto.setDataFi(dataFi);
         reservaDto.setUsuariEmail(myEmail);
         reservaDto.setUsuariNom(nomUsuari);
 
-        reservaDto.setIdCalendar(event.getICalUID());
+        reservaDto.setIdCalendar(this.CALENDAR_AULA_MAGNA);
         reservaDto.setIdCalendarEvent(event.getId());
 
         reservaService.save(reservaDto);

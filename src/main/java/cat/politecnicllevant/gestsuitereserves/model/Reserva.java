@@ -25,15 +25,15 @@ public @Data class Reserva {
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime dataFi;
 
-    @Column(name = "usuari_email", nullable = false)
+    @Column(name = "usuari_email", nullable = false, length = 2048)
     private String usuariEmail;
 
-    @Column(name = "usuari_nom", nullable = false)
+    @Column(name = "usuari_nom", nullable = false, length = 2048)
     private String usuariNom;
 
-    @Column(name = "idcalendar", nullable = false)
+    @Column(name = "idcalendar", nullable = false, length = 2048)
     private String idCalendar;
 
-    @Column(name = "idcalendar_event", nullable = false)
+    @Column(name = "idcalendar_event", nullable = false, length = 2048)
     private String idCalendarEvent;
 }

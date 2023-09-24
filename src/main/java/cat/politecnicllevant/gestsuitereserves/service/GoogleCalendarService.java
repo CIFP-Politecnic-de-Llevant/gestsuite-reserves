@@ -18,7 +18,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 public class GoogleCalendarService {
@@ -32,6 +34,8 @@ public class GoogleCalendarService {
     @Value("${gc.nomprojecte}")
     private String nomProjecte;
 
+    private String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
     public Event createEvent(String idCalendar, String espai, String descripcio, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
@@ -44,8 +48,10 @@ public class GoogleCalendarService {
 
         Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
 
-        String dateIniStr = ini.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-        String dateFiStr = fi.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        ZoneId madridZone = ZoneId.of("Europe/Madrid");
+        int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
+        String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        String dateFiStr = fi.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
 
         Event event = new Event();
         event.setSummary(descripcio);
@@ -69,8 +75,10 @@ public class GoogleCalendarService {
 
         Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
 
-        String dateIniStr = ini.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-        String dateFiStr = fi.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        ZoneId madridZone = ZoneId.of("Europe/Madrid");
+        int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
+        String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        String dateFiStr = fi.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
 
         event.setSummary(descripcio);
         event.setLocation(espai);
@@ -96,7 +104,7 @@ public class GoogleCalendarService {
         return service.events().get(idCalendar, idEvent).execute();
     }
 
-    public boolean isOverlap(String idCalendar, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
+    public boolean isOverlap(String idCalendar, LocalDateTime ini, LocalDateTime fi,Event event) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
 
@@ -108,9 +116,18 @@ public class GoogleCalendarService {
 
         Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
 
-        String dateIniStr = ini.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-        String dateFiStr = fi.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        String dateIniStr = ini.format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        String dateFiStr = fi.format(DateTimeFormatter.ofPattern(DATE_PATTERN));
 
-        return !service.events().list(idCalendar).setTimeMin(new DateTime(dateIniStr)).setTimeMax(new DateTime(dateFiStr)).execute().getItems().isEmpty();
+
+        List<Event> events = service.events().list(idCalendar).setTimeMin(new DateTime(dateIniStr)).setTimeMax(new DateTime(dateFiStr)).execute().getItems();
+
+        //Si hi ha un event ja creat, el solapament NO ha de tenir en compte aquest event
+        if(event!=null){
+            //Filtrem l'event que ja tenim
+            events = events.stream().filter(e -> !e.getId().equals(event.getId())).toList();
+        }
+
+        return !events.isEmpty();
     }
 }
