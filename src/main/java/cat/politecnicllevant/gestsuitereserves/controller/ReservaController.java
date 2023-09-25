@@ -6,6 +6,7 @@ import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
 import cat.politecnicllevant.gestsuitereserves.service.GoogleCalendarService;
 import cat.politecnicllevant.gestsuitereserves.service.ReservaService;
 import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
+import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Event;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -17,7 +18,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -57,8 +60,20 @@ public class ReservaController {
                 if (event != null) {
                     System.out.println("Event updating: "+event);
                     reservaDto.setDescripcio(event.getSummary());
-                    //reservaDto.setDataInici(LocalDateTime.parse(event.getStart().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
-                    //reservaDto.setDataFi(LocalDateTime.parse(event.getEnd().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+
+                    ZoneId madridZone = ZoneId.of("Europe/Madrid");
+                    Instant instantStart = Instant.parse( event.getStart().getDateTime().toStringRfc3339()) ;
+                    LocalDateTime dataIni = LocalDateTime.ofInstant(instantStart, madridZone);
+
+                    Instant instantEnd = Instant.parse( event.getEnd().getDateTime().toStringRfc3339()) ;
+                    LocalDateTime dataFi = LocalDateTime.ofInstant(instantEnd, madridZone);
+
+                    reservaDto.setDataInici(dataIni);
+                    reservaDto.setDataFi(dataFi);
+
+
+                    //reservaDto.setDataInici(LocalDateTime.parse(event.getStart().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SZ")));
+                    //reservaDto.setDataFi(LocalDateTime.parse(event.getEnd().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SZ")));
                     reservaService.save(reservaDto);
                 }
             } catch (Exception e){
