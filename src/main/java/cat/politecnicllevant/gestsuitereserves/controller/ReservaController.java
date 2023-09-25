@@ -55,7 +55,7 @@ public class ReservaController {
         //Actualitzem les reserves si s'han modificat a Google Calendar
         for(ReservaDto reservaDto : reserves){
             try {
-                System.out.println("idCalendarEvent: "+reservaDto.getIdCalendarEvent());
+                System.out.println("idCalendarEvent: "+reservaDto.getIdCalendarEvent()+"-"+reservaDto.getDescripcio());
                 Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA, reservaDto.getIdCalendarEvent());
                 if (event != null) {
                     System.out.println("Event updating: "+event);
@@ -71,32 +71,35 @@ public class ReservaController {
                     reservaDto.setDataInici(dataIni);
                     reservaDto.setDataFi(dataFi);
 
-
-                    //reservaDto.setDataInici(LocalDateTime.parse(event.getStart().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SZ")));
-                    //reservaDto.setDataFi(LocalDateTime.parse(event.getEnd().getDateTime().toStringRfc3339(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SZ")));
                     reservaService.save(reservaDto);
                 }
             } catch (Exception e){
                 System.out.println("L'event no existeix per aquest usuari al calendari");
-                e.printStackTrace();
+                reservaService.esborrar(reservaDto);
             }
         }
+
+        reserves = reserves.stream().map(reservaDto -> {
+            reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0,reservaDto.getDescripcio().lastIndexOf("-")).trim());
+            return reservaDto;
+        }).toList();
 
         return new ResponseEntity<>(reserves, HttpStatus.OK);
     }
 
-    @GetMapping("/reserves")
+    /*@GetMapping("/reserves")
     public ResponseEntity<List<ReservaDto>> getReserves() {
 
         List<ReservaDto> reserves = reservaService.findAll();
 
         return new ResponseEntity<>(reserves, HttpStatus.OK);
-    }
+    }*/
 
     @GetMapping("/reserva/{id}")
     public ResponseEntity<ReservaDto> getReservaById(@PathVariable("id") String idReserva) {
 
         ReservaDto reservaDto = reservaService.getReservaById(Long.valueOf(idReserva));
+        reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0,reservaDto.getDescripcio().lastIndexOf("-")).trim());
 
         return new ResponseEntity<>(reservaDto, HttpStatus.OK);
     }
