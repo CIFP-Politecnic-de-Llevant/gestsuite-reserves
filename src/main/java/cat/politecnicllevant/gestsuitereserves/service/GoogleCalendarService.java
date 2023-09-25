@@ -48,6 +48,7 @@ public class GoogleCalendarService {
 
         Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
 
+        //Ajustem l'hora a la zona horaria de Madrid
         ZoneId madridZone = ZoneId.of("Europe/Madrid");
         int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
         String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
@@ -75,6 +76,7 @@ public class GoogleCalendarService {
 
         Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
 
+        //Ajustem l'hora a la zona horaria de Madrid
         ZoneId madridZone = ZoneId.of("Europe/Madrid");
         int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
         String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
@@ -116,8 +118,11 @@ public class GoogleCalendarService {
 
         Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
 
-        String dateIniStr = ini.format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-        String dateFiStr = fi.format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        //Ajustem l'hora a la zona horaria de Madrid
+        ZoneId madridZone = ZoneId.of("Europe/Madrid");
+        int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
+        String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        String dateFiStr = fi.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
 
 
         List<Event> events = service.events().list(idCalendar).setTimeMin(new DateTime(dateIniStr)).setTimeMax(new DateTime(dateFiStr)).execute().getItems();
