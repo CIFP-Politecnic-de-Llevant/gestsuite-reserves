@@ -54,6 +54,8 @@ public class ReservaController {
 
         //Actualitzem les reserves si s'han modificat a Google Calendar
         for(ReservaDto reservaDto : reserves){
+            reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0,reservaDto.getDescripcio().lastIndexOf("-")).trim());
+
             try {
                 System.out.println("idCalendarEvent: "+reservaDto.getIdCalendarEvent()+"-"+reservaDto.getDescripcio());
                 Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA, reservaDto.getIdCalendarEvent());
@@ -78,11 +80,6 @@ public class ReservaController {
                 reservaService.esborrar(reservaDto);
             }
         }
-
-        reserves = reserves.stream().map(reservaDto -> {
-            reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0,reservaDto.getDescripcio().lastIndexOf("-")).trim());
-            return reservaDto;
-        }).toList();
 
         return new ResponseEntity<>(reserves, HttpStatus.OK);
     }
@@ -145,9 +142,9 @@ public class ReservaController {
 
         //Creem la reserva a Google Calendar
         if(idReserva != null) {
-            event = googleCalendarService.updateEvent(event, CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
+            event = googleCalendarService.updateEvent(event, CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari,dataInici,dataFi);
         } else {
-            event = googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,dataInici,dataFi);
+            event = googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, dataInici,dataFi);
         }
 
 

@@ -36,7 +36,7 @@ public class GoogleCalendarService {
 
     private String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
 
-    public Event createEvent(String idCalendar, String espai, String descripcio, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
+    public Event createEvent(String idCalendar, String espai, String descripcio, String usuari, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
 
@@ -57,14 +57,14 @@ public class GoogleCalendarService {
         Event event = new Event();
         event.setSummary(descripcio);
         event.setLocation(espai);
-        event.setDescription(descripcio);
+        event.setDescription("Reserva realitzada per " + usuari + " a través de GestSuite. (El propietari de la reserva no es modificarà)");
         event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
         event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
 
         return service.events().insert(idCalendar, event).execute();
     }
 
-    public Event updateEvent(Event event,  String idCalendar, String espai, String descripcio, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
+    public Event updateEvent(Event event,  String idCalendar, String espai, String descripcio, String usuari, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
 
@@ -84,7 +84,7 @@ public class GoogleCalendarService {
 
         event.setSummary(descripcio);
         event.setLocation(espai);
-        event.setDescription(descripcio);
+        event.setDescription("Reserva realitzada per " + usuari + " a través de GestSuite. (El propietari de la reserva no es modificarà)");
         event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
         event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
 
