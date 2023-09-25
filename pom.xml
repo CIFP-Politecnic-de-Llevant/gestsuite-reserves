@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>cat.politecnicllevant</groupId>
-	<artifactId>gestsuite-reserves</artifactId>
+	<artifactId>reserves</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>gestsuite-reserves</name>
-	<description>gestsuite-reserves</description>
+	<name>reserves</name>
+	<description>reserves</description>
 	<properties>
 		<java.version>17</java.version>
 		<spring-cloud.version>2022.0.4</spring-cloud.version>
