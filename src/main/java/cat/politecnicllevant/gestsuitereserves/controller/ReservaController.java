@@ -93,7 +93,7 @@ public class ReservaController {
         if(reservaDto.getDescripcio().lastIndexOf("-")>=0) {
             reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0, reservaDto.getDescripcio().lastIndexOf("-")).trim());
         }
-        
+
         return new ResponseEntity<>(reservaDto, HttpStatus.OK);
     }
 
