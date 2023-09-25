@@ -54,7 +54,9 @@ public class ReservaController {
 
         //Actualitzem les reserves si s'han modificat a Google Calendar
         for(ReservaDto reservaDto : reserves){
-            reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0,reservaDto.getDescripcio().lastIndexOf("-")).trim());
+            if(reservaDto.getDescripcio().lastIndexOf("-")>=0) {
+                reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0, reservaDto.getDescripcio().lastIndexOf("-")).trim());
+            }
 
             try {
                 System.out.println("idCalendarEvent: "+reservaDto.getIdCalendarEvent()+"-"+reservaDto.getDescripcio());
@@ -88,8 +90,10 @@ public class ReservaController {
     public ResponseEntity<ReservaDto> getReservaById(@PathVariable("id") String idReserva) {
 
         ReservaDto reservaDto = reservaService.getReservaById(Long.valueOf(idReserva));
-        reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0,reservaDto.getDescripcio().lastIndexOf("-")).trim());
-
+        if(reservaDto.getDescripcio().lastIndexOf("-")>=0) {
+            reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0, reservaDto.getDescripcio().lastIndexOf("-")).trim());
+        }
+        
         return new ResponseEntity<>(reservaDto, HttpStatus.OK);
     }
 
