@@ -33,11 +33,6 @@ public class ReservaService {
         return reservaDto;
     }
 
-    public List<ReservaDto> findAll(){
-        ModelMapper modelMapper = new ModelMapper();
-        return reservaRepository.findAll().stream().map(c->modelMapper.map(c,ReservaDto.class)).collect(Collectors.toList());
-    }
-
     public List<ReservaDto> findAllByEmail(String email){
         ModelMapper modelMapper = new ModelMapper();
         return reservaRepository.findAllByUsuariEmail(email).stream().map(c->modelMapper.map(c,ReservaDto.class)).collect(Collectors.toList());

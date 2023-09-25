@@ -87,14 +87,6 @@ public class ReservaController {
         return new ResponseEntity<>(reserves, HttpStatus.OK);
     }
 
-    /*@GetMapping("/reserves")
-    public ResponseEntity<List<ReservaDto>> getReserves() {
-
-        List<ReservaDto> reserves = reservaService.findAll();
-
-        return new ResponseEntity<>(reserves, HttpStatus.OK);
-    }*/
-
     @GetMapping("/reserva/{id}")
     public ResponseEntity<ReservaDto> getReservaById(@PathVariable("id") String idReserva) {
 
