@@ -41,8 +41,11 @@ public class ReservaController {
     @Autowired
     private Gson gson;
 
-    //private final String CALENDAR_AULA_MAGNA = "c_fde278d64cd5f4b1b2d54ce1e07a948ab1fdfdf92d411a68433043bab8f17f3a@group.calendar.google.com";
-    private final String CALENDAR_AULA_MAGNA = "6e367ff7e6e4a0e97582c8454f06a4bcc06ed640e5f06f42067cd13525de7b36@group.calendar.google.com";
+    //Development
+    //private final String CALENDAR_AULA_MAGNA = "6e367ff7e6e4a0e97582c8454f06a4bcc06ed640e5f06f42067cd13525de7b36@group.calendar.google.com";
+
+    //Production
+    private final String CALENDAR_AULA_MAGNA = "a3bf8c6e334586334fd997350ecf04e6057c5e4b09a62a4e6dd951ef9955cf92@group.calendar.google.com";
 
     @GetMapping("/myreserves")
     public ResponseEntity<List<ReservaDto>> getMyReserves(HttpServletRequest request) throws GeneralSecurityException, IOException {
