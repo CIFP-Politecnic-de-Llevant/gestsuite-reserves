@@ -5,8 +5,7 @@ import cat.politecnicllevant.common.model.NotificacioTipus;
 import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
 import cat.politecnicllevant.gestsuitereserves.service.GoogleCalendarService;
 import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
-import com.google.api.client.util.DateTime;
-import com.google.api.client.util.Value;
+import org.springframework.beans.factory.annotation.Value;
 import com.google.api.services.calendar.model.Event;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -43,7 +42,7 @@ public class ReservaController {
     private Gson gson;
 
     @Value("${google.calendar.aulamagna}")
-    private final String CALENDAR_AULA_MAGNA = "";
+    private String CALENDAR_AULA_MAGNA;
 
 
     @GetMapping("/myreserves")
@@ -134,7 +133,12 @@ public class ReservaController {
         ReservaDto reservaDto = new ReservaDto();
         reservaDto.setIdReserva(event.getId());
 
-        String descripcio = event.getSummary().substring(0, event.getSummary().lastIndexOf("-")).trim();
+        String descripcio = event.getSummary();
+
+        if(descripcio.lastIndexOf("-")>-1){
+            descripcio = descripcio.substring(0, descripcio.lastIndexOf("-")).trim();
+        }
+
         reservaDto.setDescripcio(descripcio);
 
         ZoneId madridZone = ZoneId.of("Europe/Madrid");
