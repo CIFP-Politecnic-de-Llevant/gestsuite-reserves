@@ -103,7 +103,7 @@ public class ReservaController {
         Event event = null;
 
         if(idReserva != null) {
-            event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva.toString());
+            event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva);
         }
 
         //Comprovam disponibilitat
