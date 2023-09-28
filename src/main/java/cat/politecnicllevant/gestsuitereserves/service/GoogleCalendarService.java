@@ -37,7 +37,7 @@ public class GoogleCalendarService {
     @Value("${gc.nomprojecte}")
     private String nomProjecte;
 
-    private String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+    private final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
 
     public List<Event> findAll(String idCalendar,String email) throws GeneralSecurityException, IOException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
@@ -86,7 +86,7 @@ public class GoogleCalendarService {
         Event event = new Event();
         event.setSummary(descripcio);
         event.setLocation(espai);
-        event.setDescription("Reserva realitzada per " + usuari + "(" + email + ") a través de GestSuite.");
+        event.setDescription("IMPORTANT! Tots els col·laboradors tenen permisos per editar l'esdeveniment.");
         event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
         event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
 
@@ -123,7 +123,7 @@ public class GoogleCalendarService {
 
         event.setSummary(descripcio);
         event.setLocation(espai);
-        event.setDescription("Reserva realitzada per " + usuari + "(" + email + ") a través de GestSuite.");
+        event.setDescription("IMPORTANT! Tots els col·laboradors tenen permisos per editar l'esdeveniment.");
         event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
         event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
 
