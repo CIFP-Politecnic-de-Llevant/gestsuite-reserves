@@ -10,6 +10,7 @@ import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventAttendee;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.Events;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,6 +38,32 @@ public class GoogleCalendarService {
     private String nomProjecte;
 
     private String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
+    public List<Event> findAll(String idCalendar,String email) throws GeneralSecurityException, IOException {
+        String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+        GoogleCredentials credentials = null;
+
+        credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(this.adminUser);
+
+        HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+        Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+        List<Event> allEvents = service.events().list(idCalendar).execute().getItems();
+
+        //Filtrem els esdeveniments que estam com a col·laboradors
+        return allEvents.stream().filter(e->{
+            List<EventAttendee> assistents = e.getAttendees();
+            if(assistents==null){
+                return false;
+            }
+            System.out.println(e.getId());
+            System.out.println(assistents.get(0).getEmail());
+            return assistents.stream().anyMatch(a->a.getEmail().equals(email));
+        }).toList();
+    }
 
     public Event createEvent(String idCalendar, String espai, String descripcio, String usuari, String email, LocalDateTime ini, LocalDateTime fi) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
@@ -58,9 +86,19 @@ public class GoogleCalendarService {
         Event event = new Event();
         event.setSummary(descripcio);
         event.setLocation(espai);
-        event.setDescription("Reserva realitzada per " + usuari + "(" + email + ") a través de GestSuite. (El propietari de la reserva no es modificarà)");
+        event.setDescription("Reserva realitzada per " + usuari + "(" + email + ") a través de GestSuite.");
         event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
         event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
+
+        EventAttendee attendee = new EventAttendee();
+        attendee.setEmail(email);
+        attendee.setDisplayName(usuari);
+        attendee.setResponseStatus("accepted");
+
+        List<EventAttendee> attendees = new ArrayList<>();
+        attendees.add(attendee);
+
+        event.setAttendees(attendees);
 
         return service.events().insert(idCalendar, event).execute();
     }
@@ -85,9 +123,20 @@ public class GoogleCalendarService {
 
         event.setSummary(descripcio);
         event.setLocation(espai);
-        event.setDescription("Reserva realitzada per " + usuari + "(" + email + ") a través de GestSuite. (El propietari de la reserva no es modificarà)");
+        event.setDescription("Reserva realitzada per " + usuari + "(" + email + ") a través de GestSuite.");
         event.setStart(new EventDateTime().setDateTime(new DateTime(dateIniStr)).setTimeZone("Europe/Madrid"));
         event.setEnd(new EventDateTime().setDateTime(new DateTime(dateFiStr)).setTimeZone("Europe/Madrid"));
+
+        EventAttendee attendee = new EventAttendee();
+        attendee.setEmail(email);
+        attendee.setDisplayName(usuari);
+        attendee.setOrganizer(true);
+        attendee.setResponseStatus("accepted");
+
+        List<EventAttendee> attendees = new ArrayList<>();
+        attendees.add(attendee);
+
+        event.setAttendees(attendees);
 
         return service.events().update(idCalendar, event.getId(), event).execute();
     }

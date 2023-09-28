@@ -4,9 +4,9 @@ import cat.politecnicllevant.common.model.Notificacio;
 import cat.politecnicllevant.common.model.NotificacioTipus;
 import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
 import cat.politecnicllevant.gestsuitereserves.service.GoogleCalendarService;
-import cat.politecnicllevant.gestsuitereserves.service.ReservaService;
 import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
 import com.google.api.client.util.DateTime;
+import com.google.api.client.util.Value;
 import com.google.api.services.calendar.model.Event;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,8 +30,8 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 public class ReservaController {
 
-    @Autowired
-    private ReservaService reservaService;
+    //@Autowired
+    //private ReservaService reservaService;
 
     @Autowired
     private GoogleCalendarService googleCalendarService;
@@ -41,11 +42,9 @@ public class ReservaController {
     @Autowired
     private Gson gson;
 
-    //Development
-    //private final String CALENDAR_AULA_MAGNA = "6e367ff7e6e4a0e97582c8454f06a4bcc06ed640e5f06f42067cd13525de7b36@group.calendar.google.com";
+    @Value("${google.calendar.aulamagna}")
+    private final String CALENDAR_AULA_MAGNA = "";
 
-    //Production
-    private final String CALENDAR_AULA_MAGNA = "a3bf8c6e334586334fd997350ecf04e6057c5e4b09a62a4e6dd951ef9955cf92@group.calendar.google.com";
 
     @GetMapping("/myreserves")
     public ResponseEntity<List<ReservaDto>> getMyReserves(HttpServletRequest request) throws GeneralSecurityException, IOException {
@@ -53,52 +52,28 @@ public class ReservaController {
         String myEmail = (String) claims.get("email");
         String nomUsuari = (String) claims.get("nom");
 
-        List<ReservaDto> reserves = reservaService.findAllByEmail(myEmail);
+        List<Event> myEvents = googleCalendarService.findAll(this.CALENDAR_AULA_MAGNA,myEmail);
 
-        //Actualitzem les reserves si s'han modificat a Google Calendar
-        for(ReservaDto reservaDto : reserves){
-            if(reservaDto.getDescripcio().lastIndexOf("-")>=0) {
-                reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0, reservaDto.getDescripcio().lastIndexOf("-")).trim());
-            }
+        List<ReservaDto> reserves = new ArrayList<>();
 
-            try {
-                System.out.println("idCalendarEvent: "+reservaDto.getIdCalendarEvent()+"-"+reservaDto.getDescripcio());
-                Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA, reservaDto.getIdCalendarEvent());
-                if (event != null) {
-                    System.out.println("Event updating: "+event);
-                    reservaDto.setDescripcio(event.getSummary());
-
-                    ZoneId madridZone = ZoneId.of("Europe/Madrid");
-                    Instant instantStart = Instant.parse( event.getStart().getDateTime().toStringRfc3339()) ;
-                    LocalDateTime dataIni = LocalDateTime.ofInstant(instantStart, madridZone);
-
-                    Instant instantEnd = Instant.parse( event.getEnd().getDateTime().toStringRfc3339()) ;
-                    LocalDateTime dataFi = LocalDateTime.ofInstant(instantEnd, madridZone);
-
-                    reservaDto.setDataInici(dataIni);
-                    reservaDto.setDataFi(dataFi);
-
-                    reservaService.save(reservaDto);
-                }
-            } catch (Exception e){
-                System.out.println("L'event no existeix per aquest usuari al calendari");
-                reservaService.esborrar(reservaDto);
-            }
+        for(Event event: myEvents){
+            ReservaDto reservaDto = mapEvent(event);
+            reserves.add(reservaDto);
         }
 
         return new ResponseEntity<>(reserves, HttpStatus.OK);
     }
 
     @GetMapping("/reserva/{id}")
-    public ResponseEntity<ReservaDto> getReservaById(@PathVariable("id") String idReserva) {
+    public ResponseEntity<ReservaDto> getReservaById(@PathVariable("id") String idReserva) throws GeneralSecurityException, IOException {
 
-        ReservaDto reservaDto = reservaService.getReservaById(Long.valueOf(idReserva));
-        if(reservaDto.getDescripcio().lastIndexOf("-")>=0) {
-            reservaDto.setDescripcio(reservaDto.getDescripcio().substring(0, reservaDto.getDescripcio().lastIndexOf("-")).trim());
-        }
+        Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva);
+
+        ReservaDto reservaDto = mapEvent(event);
 
         return new ResponseEntity<>(reservaDto, HttpStatus.OK);
     }
+
 
     @PostMapping("/reserva/desar")
     public ResponseEntity<Notificacio> desarReserva(@RequestBody String json, HttpServletRequest request) throws Exception {
@@ -113,9 +88,9 @@ public class ReservaController {
 
         JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
 
-        Long idReserva = null;
+        String idReserva = null;
         if (jsonObject.get("id") != null && !jsonObject.get("id").isJsonNull()){
-            idReserva = jsonObject.get("id").getAsLong();
+            idReserva = jsonObject.get("id").getAsString();
         }
 
         String descripcio = jsonObject.get("descripcio").getAsString();
@@ -128,14 +103,8 @@ public class ReservaController {
         //Reservem a l'agenda de Google Calendar
         Event event = null;
 
-        ReservaDto reservaDto;
-
         if(idReserva != null) {
-            reservaDto = reservaService.getReservaById(idReserva);
-            System.out.println("idCalendarEvent 2: "+reservaDto.getIdCalendarEvent());
-            event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,reservaDto.getIdCalendarEvent());
-        } else {
-            reservaDto = new ReservaDto();
+            event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva.toString());
         }
 
         //Comprovam disponibilitat
@@ -149,23 +118,10 @@ public class ReservaController {
 
         //Creem la reserva a Google Calendar
         if(idReserva != null) {
-            event = googleCalendarService.updateEvent(event, CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
+            googleCalendarService.updateEvent(event, CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
         } else {
-            event = googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
+            googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
         }
-
-
-        //Desem la reserva a la BBDD
-        reservaDto.setDescripcio(descripcio);
-        reservaDto.setDataInici(dataInici);
-        reservaDto.setDataFi(dataFi);
-        reservaDto.setUsuariEmail(myEmail);
-        reservaDto.setUsuariNom(nomUsuari);
-
-        reservaDto.setIdCalendar(this.CALENDAR_AULA_MAGNA);
-        reservaDto.setIdCalendarEvent(event.getId());
-
-        reservaService.save(reservaDto);
 
 
         Notificacio notificacio = new Notificacio();
@@ -174,5 +130,23 @@ public class ReservaController {
         return new ResponseEntity<>(notificacio, HttpStatus.OK);
     }
 
+    private ReservaDto mapEvent(Event event) {
+        ReservaDto reservaDto = new ReservaDto();
+        reservaDto.setIdReserva(event.getId());
 
+        String descripcio = event.getSummary().substring(0, event.getSummary().lastIndexOf("-")).trim();
+        reservaDto.setDescripcio(descripcio);
+
+        ZoneId madridZone = ZoneId.of("Europe/Madrid");
+        Instant instantStart = Instant.parse( event.getStart().getDateTime().toStringRfc3339()) ;
+        LocalDateTime dataIni = LocalDateTime.ofInstant(instantStart, madridZone);
+
+        Instant instantEnd = Instant.parse( event.getEnd().getDateTime().toStringRfc3339()) ;
+        LocalDateTime dataFi = LocalDateTime.ofInstant(instantEnd, madridZone);
+
+        reservaDto.setDataInici(dataIni);
+        reservaDto.setDataFi(dataFi);
+
+        return reservaDto;
+    }
 }
