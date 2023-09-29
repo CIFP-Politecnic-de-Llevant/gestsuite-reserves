@@ -59,8 +59,6 @@ public class GoogleCalendarService {
             if(assistents==null){
                 return false;
             }
-            System.out.println(e.getId());
-            System.out.println(assistents.get(0).getEmail());
             return assistents.stream().anyMatch(a->a.getEmail().equals(email));
         }).toList();
     }
@@ -155,6 +153,24 @@ public class GoogleCalendarService {
 
         return service.events().get(idCalendar, idEvent).execute();
     }
+
+    public boolean deleteEventById(String idCalendar, String idEvent) throws IOException, GeneralSecurityException {
+        String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+        GoogleCredentials credentials = null;
+
+        credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(this.adminUser);
+
+        HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+        Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+        service.events().delete(idCalendar, idEvent).execute();
+
+        return true;
+    }
+
 
     public boolean isOverlap(String idCalendar, LocalDateTime ini, LocalDateTime fi,Event event) throws IOException, GeneralSecurityException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};

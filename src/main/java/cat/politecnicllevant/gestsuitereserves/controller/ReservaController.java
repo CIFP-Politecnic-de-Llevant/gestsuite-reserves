@@ -5,6 +5,7 @@ import cat.politecnicllevant.common.model.NotificacioTipus;
 import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
 import cat.politecnicllevant.gestsuitereserves.service.GoogleCalendarService;
 import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
+import com.google.api.services.calendar.model.EventAttendee;
 import org.springframework.beans.factory.annotation.Value;
 import com.google.api.services.calendar.model.Event;
 import com.google.gson.Gson;
@@ -73,7 +74,6 @@ public class ReservaController {
         return new ResponseEntity<>(reservaDto, HttpStatus.OK);
     }
 
-
     @PostMapping("/reserva/desar")
     public ResponseEntity<Notificacio> desarReserva(@RequestBody String json, HttpServletRequest request) throws Exception {
 
@@ -125,6 +125,37 @@ public class ReservaController {
 
         Notificacio notificacio = new Notificacio();
         notificacio.setNotifyMessage("Reserva desada correctament");
+        notificacio.setNotifyType(NotificacioTipus.SUCCESS);
+        return new ResponseEntity<>(notificacio, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/reserva/eliminar/{id}")
+    public ResponseEntity<Notificacio> eliminarReserva(@PathVariable("id") String idReserva, HttpServletRequest request) throws GeneralSecurityException, IOException {
+
+        Claims claims = tokenManager.getClaims(request);
+        String myEmail = (String) claims.get("email");
+        String nomUsuari = (String) claims.get("nom");
+
+        System.out.println("myEmail: "+myEmail);
+        System.out.println("nomUsuari: "+nomUsuari);
+
+        //Comprovem que té permisos per esborrar, és a dir, si l'esdeveniment és de l'usuari
+        Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva);
+        List<EventAttendee> colaboradors = event.getAttendees();
+        boolean trobat = colaboradors.stream().anyMatch(colaborador -> colaborador.getEmail().equals(myEmail));
+
+        if(!trobat){
+            Notificacio notificacio = new Notificacio();
+            notificacio.setNotifyMessage("No tens permisos per eliminar aquesta reserva");
+            notificacio.setNotifyType(NotificacioTipus.ERROR);
+            return new ResponseEntity<>(notificacio, HttpStatus.OK);
+        }
+
+        //Eliminam de l'agenda de Google Calendar
+        googleCalendarService.deleteEventById(this.CALENDAR_AULA_MAGNA,idReserva);
+
+        Notificacio notificacio = new Notificacio();
+        notificacio.setNotifyMessage("Reserva eliminada correctament");
         notificacio.setNotifyType(NotificacioTipus.SUCCESS);
         return new ResponseEntity<>(notificacio, HttpStatus.OK);
     }
