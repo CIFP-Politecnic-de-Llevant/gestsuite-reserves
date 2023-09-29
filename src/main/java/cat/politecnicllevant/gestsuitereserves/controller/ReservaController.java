@@ -81,10 +81,6 @@ public class ReservaController {
         String myEmail = (String) claims.get("email");
         String nomUsuari = (String) claims.get("nom");
 
-        System.out.println("myEmail: "+myEmail);
-        System.out.println("nomUsuari: "+nomUsuari);
-
-
         JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
 
         String idReserva = null;
@@ -135,9 +131,6 @@ public class ReservaController {
         Claims claims = tokenManager.getClaims(request);
         String myEmail = (String) claims.get("email");
         String nomUsuari = (String) claims.get("nom");
-
-        System.out.println("myEmail: "+myEmail);
-        System.out.println("nomUsuari: "+nomUsuari);
 
         //Comprovem que té permisos per esborrar, és a dir, si l'esdeveniment és de l'usuari
         Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva);
