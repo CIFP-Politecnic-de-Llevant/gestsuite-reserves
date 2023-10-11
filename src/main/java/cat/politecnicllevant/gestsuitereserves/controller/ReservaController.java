@@ -65,11 +65,6 @@ public class ReservaController {
 
         List<CalendariDto> calendaris = new ArrayList<>();
 
-        /*for(CalendarListEntry calendar: calendarList){
-            CalendariDto calendariDto = mapCalendar(calendar);
-            calendaris.add(calendariDto);
-        }*/
-
         for(String idCalendar: CALENDARS){
             if(!googleCalendarService.hasCalendar(idCalendar,this.adminUser)){
                 System.out.println("El calendari "+idCalendar+" no està compartit per "+this.adminUser);
@@ -81,6 +76,23 @@ public class ReservaController {
         }
 
         return new ResponseEntity<>(calendaris, HttpStatus.OK);
+    }
+
+    @GetMapping("/calendari/{idCalendari}")
+    public ResponseEntity<CalendariDto> getCalendariById(@PathVariable("idCalendar") String idCalendar,HttpServletRequest request) throws GeneralSecurityException, IOException {
+        Claims claims = tokenManager.getClaims(request);
+        String myEmail = (String) claims.get("email");
+        String nomUsuari = (String) claims.get("nom");
+
+        if(!googleCalendarService.hasCalendar(idCalendar,this.adminUser)){
+            System.out.println("El calendari "+idCalendar+" no està compartit per "+this.adminUser);
+        } else {
+            CalendarListEntry calenarListEntry = googleCalendarService.getCalendar(idCalendar);
+            CalendariDto calendariDto = mapCalendar(calenarListEntry);
+            return new ResponseEntity<>(calendariDto, HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/{idCalendar}/myreserves")
