@@ -154,7 +154,7 @@ public class ReservaController {
 
         String descripcio = jsonObject.get("descripcio").getAsString();
 
-        System.out.println("Date inici"+jsonObject.get("dataInici").getAsString());
+        //System.out.println("Date inici"+jsonObject.get("dataInici").getAsString());
         LocalDateTime dataInici = LocalDateTime.parse(jsonObject.get("dataInici").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
         LocalDateTime dataFi = LocalDateTime.parse(jsonObject.get("dataFi").getAsString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 

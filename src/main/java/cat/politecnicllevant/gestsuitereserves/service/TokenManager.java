@@ -45,7 +45,7 @@ public class TokenManager {
     }
 
     public Claims getClaims(HttpServletRequest request) {
-        System.out.println("Claims: "+request.getHeader("Authorization"));
+        //System.out.println("Claims: "+request.getHeader("Authorization"));
         String auth = request.getHeader("Authorization");
         String token = auth.replace("Bearer ", "");
         return getClaims(token);
