@@ -78,7 +78,7 @@ public class ReservaController {
         return new ResponseEntity<>(calendaris, HttpStatus.OK);
     }
 
-    @GetMapping("/calendari/{idCalendari}")
+    @GetMapping("/calendari/{idCalendar}")
     public ResponseEntity<CalendariDto> getCalendariById(@PathVariable("idCalendar") String idCalendar,HttpServletRequest request) throws GeneralSecurityException, IOException {
         Claims claims = tokenManager.getClaims(request);
         String myEmail = (String) claims.get("email");
