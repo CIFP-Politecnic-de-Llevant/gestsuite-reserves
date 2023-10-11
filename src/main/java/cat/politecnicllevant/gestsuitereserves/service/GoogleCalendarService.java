@@ -1,5 +1,7 @@
 package cat.politecnicllevant.gestsuitereserves.service;
 
+import cat.politecnicllevant.gestsuitereserves.dto.google.CalendariRolDto;
+import cat.politecnicllevant.gestsuitereserves.dto.google.CalendariTipusUsuariDto;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -7,10 +9,7 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
-import com.google.api.services.calendar.model.Event;
-import com.google.api.services.calendar.model.EventAttendee;
-import com.google.api.services.calendar.model.EventDateTime;
-import com.google.api.services.calendar.model.Events;
+import com.google.api.services.calendar.model.*;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,7 +38,92 @@ public class GoogleCalendarService {
 
     private final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
 
-    public List<Event> findAll(String idCalendar,String email) throws GeneralSecurityException, IOException {
+    public List<CalendarListEntry> getCalendars() throws IOException, GeneralSecurityException {
+        String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+        GoogleCredentials credentials = null;
+
+        credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(this.adminUser);
+
+        HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+        Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+        return service.calendarList().list().execute().getItems();
+    }
+
+    public CalendarListEntry getCalendar(String idCalendar) throws IOException, GeneralSecurityException {
+        String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+        GoogleCredentials credentials = null;
+
+        credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(this.adminUser);
+
+        HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+        Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+        return service.calendarList().get(idCalendar).execute();
+    }
+
+    public boolean hasCalendar(String idCalendar,String email) {
+        try {
+            String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+            GoogleCredentials credentials = null;
+
+            credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(email);
+
+            HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+            final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+            Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+            CalendarListEntry calendarListEntry = service.calendarList().get(idCalendar).execute();
+
+            return calendarListEntry != null;
+        } catch (Exception e){
+            return false;
+        }
+    }
+
+    public void insertUserCalendar(String emailUser, String emailCalendar, CalendariRolDto rol, CalendariTipusUsuariDto tipusUsuari) {
+        try {
+            String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
+            GoogleCredentials credentials = null;
+
+            credentials = GoogleCredentials.fromStream(new FileInputStream(this.keyFile)).createScoped(scopes).createDelegated(this.adminUser);
+
+            HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+
+            final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+
+            Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), requestInitializer).setApplicationName(this.nomProjecte).build();
+
+            AclRule.Scope scope = new AclRule.Scope();
+            scope.setType(tipusUsuari.getTipus());
+            scope.setValue(emailUser);
+
+            AclRule aclRule = new AclRule();
+            aclRule.setRole(rol.getRol());
+            aclRule.setScope(scope);
+
+            AclRule aclRuleExist = service.acl().get(emailCalendar, rol.getRol()).execute();
+
+            //Inserim només si no existeix previament
+            if(aclRuleExist==null) {
+                service.acl().insert(emailCalendar, aclRule).execute();
+            }
+
+            System.out.println("S'ha afegit l'usuari " + emailUser + " al calendari " + emailCalendar+" amb el rol "+rol.getRol());
+        } catch (IOException | GeneralSecurityException e) {
+            System.out.println("email: " + emailUser + " calendari: " + emailCalendar + " error: " + e.getMessage());
+        }
+    }
+
+    public List<Event> findAllEvents(String idCalendar, String email) throws GeneralSecurityException, IOException {
         String[] scopes = {CalendarScopes.CALENDAR, CalendarScopes.CALENDAR_READONLY};
         GoogleCredentials credentials = null;
 

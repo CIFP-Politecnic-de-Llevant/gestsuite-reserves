@@ -2,9 +2,14 @@ package cat.politecnicllevant.gestsuitereserves.controller;
 
 import cat.politecnicllevant.common.model.Notificacio;
 import cat.politecnicllevant.common.model.NotificacioTipus;
+import cat.politecnicllevant.gestsuitereserves.dto.CalendariDto;
 import cat.politecnicllevant.gestsuitereserves.dto.ReservaDto;
+import cat.politecnicllevant.gestsuitereserves.dto.google.CalendariRolDto;
+import cat.politecnicllevant.gestsuitereserves.dto.google.CalendariTipusUsuariDto;
 import cat.politecnicllevant.gestsuitereserves.service.GoogleCalendarService;
 import cat.politecnicllevant.gestsuitereserves.service.TokenManager;
+import com.google.api.services.calendar.model.CalendarList;
+import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.EventAttendee;
 import org.springframework.beans.factory.annotation.Value;
 import com.google.api.services.calendar.model.Event;
@@ -23,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,17 +48,53 @@ public class ReservaController {
     @Autowired
     private Gson gson;
 
-    @Value("${google.calendar.aulamagna}")
-    private String CALENDAR_AULA_MAGNA;
+    @Value("${google.calendars}")
+    private String[] CALENDARS;
+
+    @Value("${gc.adminUser}")
+    private String adminUser;
 
 
-    @GetMapping("/myreserves")
-    public ResponseEntity<List<ReservaDto>> getMyReserves(HttpServletRequest request) throws GeneralSecurityException, IOException {
+    @GetMapping("/calendaris")
+    public ResponseEntity<List<CalendariDto>> findAllCalendaris(HttpServletRequest request) throws GeneralSecurityException, IOException {
         Claims claims = tokenManager.getClaims(request);
         String myEmail = (String) claims.get("email");
         String nomUsuari = (String) claims.get("nom");
 
-        List<Event> myEvents = googleCalendarService.findAll(this.CALENDAR_AULA_MAGNA,myEmail);
+        //List<CalendarListEntry> calendarList = googleCalendarService.getCalendars();
+
+        List<CalendariDto> calendaris = new ArrayList<>();
+
+        /*for(CalendarListEntry calendar: calendarList){
+            CalendariDto calendariDto = mapCalendar(calendar);
+            calendaris.add(calendariDto);
+        }*/
+
+        for(String idCalendar: CALENDARS){
+            if(!googleCalendarService.hasCalendar(idCalendar,this.adminUser)){
+                System.out.println("El calendari "+idCalendar+" no està compartit per "+this.adminUser);
+            } else {
+                CalendarListEntry calenarListEntry = googleCalendarService.getCalendar(idCalendar);
+                CalendariDto calendariDto = mapCalendar(calenarListEntry);
+                calendaris.add(calendariDto);
+            }
+        }
+
+        return new ResponseEntity<>(calendaris, HttpStatus.OK);
+    }
+
+    @GetMapping("/{idCalendar}/myreserves")
+    public ResponseEntity<List<ReservaDto>> getMyReserves(@PathVariable("idCalendar") String idCalendar,HttpServletRequest request) throws GeneralSecurityException, IOException {
+        Claims claims = tokenManager.getClaims(request);
+        String myEmail = (String) claims.get("email");
+        String nomUsuari = (String) claims.get("nom");
+
+        //Comprovació de seguretat. El calendari és un dels permesos per GestSuite
+        if(!Arrays.asList(this.CALENDARS).contains(idCalendar)){
+            return null;
+        }
+
+        List<Event> myEvents = googleCalendarService.findAllEvents(idCalendar,myEmail);
 
         List<ReservaDto> reserves = new ArrayList<>();
 
@@ -64,18 +106,28 @@ public class ReservaController {
         return new ResponseEntity<>(reserves, HttpStatus.OK);
     }
 
-    @GetMapping("/reserva/{id}")
-    public ResponseEntity<ReservaDto> getReservaById(@PathVariable("id") String idReserva) throws GeneralSecurityException, IOException {
+    @GetMapping("/{idCalendar}/reserva/{id}")
+    public ResponseEntity<ReservaDto> getReservaById(@PathVariable("idCalendar") String idCalendar,@PathVariable("id") String idReserva) throws GeneralSecurityException, IOException {
 
-        Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva);
+        //Comprovació de seguretat. El calendari és un dels permesos per GestSuite
+        if(!Arrays.asList(this.CALENDARS).contains(idCalendar)){
+            return null;
+        }
+
+        Event event = googleCalendarService.getEventById(idCalendar,idReserva);
 
         ReservaDto reservaDto = mapEvent(event);
 
         return new ResponseEntity<>(reservaDto, HttpStatus.OK);
     }
 
-    @PostMapping("/reserva/desar")
-    public ResponseEntity<Notificacio> desarReserva(@RequestBody String json, HttpServletRequest request) throws Exception {
+    @PostMapping("/{idCalendar}/reserva/desar")
+    public ResponseEntity<Notificacio> desarReserva(@PathVariable("idCalendar") String idCalendar,@RequestBody String json, HttpServletRequest request) throws Exception {
+
+        //Comprovació de seguretat. El calendari és un dels permesos per GestSuite
+        if(!Arrays.asList(this.CALENDARS).contains(idCalendar)){
+            return null;
+        }
 
         Claims claims = tokenManager.getClaims(request);
         String myEmail = (String) claims.get("email");
@@ -99,11 +151,11 @@ public class ReservaController {
         Event event = null;
 
         if(idReserva != null) {
-            event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva);
+            event = googleCalendarService.getEventById(idCalendar,idReserva);
         }
 
         //Comprovam disponibilitat
-        if(googleCalendarService.isOverlap(this.CALENDAR_AULA_MAGNA,dataInici,dataFi,event)){
+        if(googleCalendarService.isOverlap(idCalendar,dataInici,dataFi,event)){
             Notificacio notificacio = new Notificacio();
             notificacio.setNotifyMessage("Ja hi ha una reserva en aquesta franja horària");
             notificacio.setNotifyType(NotificacioTipus.ERROR);
@@ -113,9 +165,9 @@ public class ReservaController {
 
         //Creem la reserva a Google Calendar
         if(idReserva != null) {
-            googleCalendarService.updateEvent(event, CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
+            googleCalendarService.updateEvent(event, idCalendar,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
         } else {
-            googleCalendarService.createEvent(CALENDAR_AULA_MAGNA,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
+            googleCalendarService.createEvent(idCalendar,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
         }
 
 
@@ -125,15 +177,20 @@ public class ReservaController {
         return new ResponseEntity<>(notificacio, HttpStatus.OK);
     }
 
-    @DeleteMapping("/reserva/eliminar/{id}")
-    public ResponseEntity<Notificacio> eliminarReserva(@PathVariable("id") String idReserva, HttpServletRequest request) throws GeneralSecurityException, IOException {
+    @DeleteMapping("/{idCalendar}/reserva/eliminar/{id}")
+    public ResponseEntity<Notificacio> eliminarReserva(@PathVariable("idCalendar") String idCalendar,@PathVariable("id") String idReserva, HttpServletRequest request) throws GeneralSecurityException, IOException {
+
+        //Comprovació de seguretat. El calendari és un dels permesos per GestSuite
+        if(!Arrays.asList(this.CALENDARS).contains(idCalendar)){
+            return null;
+        }
 
         Claims claims = tokenManager.getClaims(request);
         String myEmail = (String) claims.get("email");
         String nomUsuari = (String) claims.get("nom");
 
         //Comprovem que té permisos per esborrar, és a dir, si l'esdeveniment és de l'usuari
-        Event event = googleCalendarService.getEventById(this.CALENDAR_AULA_MAGNA,idReserva);
+        Event event = googleCalendarService.getEventById(idCalendar,idReserva);
         List<EventAttendee> colaboradors = event.getAttendees();
         boolean trobat = colaboradors.stream().anyMatch(colaborador -> colaborador.getEmail().equals(myEmail));
 
@@ -145,7 +202,7 @@ public class ReservaController {
         }
 
         //Eliminam de l'agenda de Google Calendar
-        googleCalendarService.deleteEventById(this.CALENDAR_AULA_MAGNA,idReserva);
+        googleCalendarService.deleteEventById(idCalendar,idReserva);
 
         Notificacio notificacio = new Notificacio();
         notificacio.setNotifyMessage("Reserva eliminada correctament");
@@ -176,5 +233,12 @@ public class ReservaController {
         reservaDto.setDataFi(dataFi);
 
         return reservaDto;
+    }
+
+    private CalendariDto mapCalendar(CalendarListEntry calendarListEntry){
+        CalendariDto calendariDto = new CalendariDto();
+        calendariDto.setIdCalendari(calendarListEntry.getId());
+        calendariDto.setDescripcio(calendarListEntry.getSummary());
+        return calendariDto;
     }
 }
