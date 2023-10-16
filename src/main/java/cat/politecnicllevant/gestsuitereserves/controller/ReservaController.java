@@ -174,12 +174,13 @@ public class ReservaController {
             return new ResponseEntity<>(notificacio, HttpStatus.OK);
         }
 
+        CalendarListEntry calendari = googleCalendarService.getCalendar(idCalendar);
 
         //Creem la reserva a Google Calendar
         if(idReserva != null) {
-            googleCalendarService.updateEvent(event, idCalendar,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
+            googleCalendarService.updateEvent(event, idCalendar,calendari.getLocation(),descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
         } else {
-            googleCalendarService.createEvent(idCalendar,"Aula Magna",descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
+            googleCalendarService.createEvent(idCalendar,calendari.getLocation(),descripcio+" - "+nomUsuari,nomUsuari, myEmail, dataInici,dataFi);
         }
 
 
