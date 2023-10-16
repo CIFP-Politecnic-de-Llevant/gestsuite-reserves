@@ -161,9 +161,11 @@ public class GoogleCalendarService {
 
         //Ajustem l'hora a la zona horaria de Madrid
         ZoneId madridZone = ZoneId.of("Europe/Madrid");
-        int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
-        String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-        String dateFiStr = fi.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        int secondMadridIni = madridZone.getRules().getOffset(ini).getTotalSeconds();
+        int secondMadridFi = madridZone.getRules().getOffset(fi).getTotalSeconds();
+
+        String dateIniStr = ini.minusSeconds(secondMadridIni).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        String dateFiStr = fi.minusSeconds(secondMadridFi).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
 
         Event event = new Event();
         event.setSummary(descripcio);
@@ -199,9 +201,11 @@ public class GoogleCalendarService {
 
         //Ajustem l'hora a la zona horaria de Madrid
         ZoneId madridZone = ZoneId.of("Europe/Madrid");
-        int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
-        String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-        String dateFiStr = fi.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        int secondMadridIni = madridZone.getRules().getOffset(ini).getTotalSeconds();
+        int secondMadridFi = madridZone.getRules().getOffset(fi).getTotalSeconds();
+
+        String dateIniStr = ini.minusSeconds(secondMadridIni).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        String dateFiStr = fi.minusSeconds(secondMadridFi).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
 
         event.setSummary(descripcio);
         event.setLocation(espai);
@@ -270,9 +274,11 @@ public class GoogleCalendarService {
 
         //Ajustem l'hora a la zona horaria de Madrid
         ZoneId madridZone = ZoneId.of("Europe/Madrid");
-        int secondMadrid = madridZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds();
-        String dateIniStr = ini.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-        String dateFiStr = fi.minusSeconds(secondMadrid).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        int secondMadridIni = madridZone.getRules().getOffset(ini).getTotalSeconds();
+        int secondMadridFi = madridZone.getRules().getOffset(fi).getTotalSeconds();
+
+        String dateIniStr = ini.minusSeconds(secondMadridIni).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        String dateFiStr = fi.minusSeconds(secondMadridFi).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
 
 
         List<Event> events = service.events().list(idCalendar).setTimeMin(new DateTime(dateIniStr)).setTimeMax(new DateTime(dateFiStr)).execute().getItems();
